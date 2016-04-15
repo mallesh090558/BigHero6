@@ -1,18 +1,15 @@
 package bighero6;
 
-import bigheroUI.DBConnection;
+import bigheroUI.HighscoreManager;
 import com.sun.j3d.utils.timer.J3DTimer;
-import java.awt.BufferCapabilities;
 import java.awt.Color;
 import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
@@ -22,18 +19,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferStrategy;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 public class BigHero6 extends JFrame implements Runnable
 {
-	private static final int NUM_BUFFERS = 10;
 	private static final long MAX_STATS_INTERVAL = 1000000000L;
-	private static final int NO_DELAYS_PER_YIELD = 16;
 	private static final int MAX_FRAME_SKIPS = 5;
 
 	private static final int NUM_FPS = 10;
@@ -84,9 +77,9 @@ public class BigHero6 extends JFrame implements Runnable
         private boolean stored_data=false;
         private String name;
         
-        private DBConnection conn;
+        private HighscoreManager hm;
 	
-	public BigHero6(long period, DBConnection conn, String name)
+	public BigHero6(long period, HighscoreManager hm , String name)
 	{
                 super("Big Hero 6 GAME");
 		this.name=name;
@@ -98,7 +91,7 @@ public class BigHero6 extends JFrame implements Runnable
 		this.obs = new Obstacles(this, this.pWidth, this.pHeight);
 		this.fred = new BayMax(this.pWidth, this.pHeight, this.obs);
 	
-		this.conn=conn;
+		this.hm=hm;
 		
                 addMouseListener(new MouseAdapter() 
 		{
@@ -155,39 +148,6 @@ public class BigHero6 extends JFrame implements Runnable
 	
 		setBufferStrategy();
 	}
-	
-	private void reportCapabilities()
-	{
-		GraphicsConfiguration gc = this.gd.getDefaultConfiguration();
-	
-		ImageCapabilities imageCaps = gc.getImageCapabilities();
-		System.out.println("Image Caps. isAccelerated: " + imageCaps.isAccelerated());
-		System.out.println("Image Caps. isTrueVolatile: " + imageCaps.isTrueVolatile());
-	
-		BufferCapabilities bufferCaps = gc.getBufferCapabilities();
-		System.out.println("Buffer Caps. isPageFlipping: " + bufferCaps.isPageFlipping());
-		System.out.println("Buffer Caps. Flip Contents: " + getFlipText(bufferCaps.getFlipContents()));
-	
-		System.out.println("Buffer Caps. Full-screen Required: " + bufferCaps.isFullScreenRequired());
-	
-		System.out.println("Buffer Caps. MultiBuffers: " + bufferCaps.isMultiBufferAvailable());
-	}
-	
-	private String getFlipText(BufferCapabilities.FlipContents flip)
-	{
-		if (flip == null)
-			return "false";
-		if (flip == BufferCapabilities.FlipContents.UNDEFINED)
-			return "Undefined";
-		if (flip == BufferCapabilities.FlipContents.BACKGROUND)
-			return "Background";
-		if (flip == BufferCapabilities.FlipContents.PRIOR) 
-		{
-			return "Prior";
-		}
-		return "Copied";
-	}
-	
 	private void setBufferStrategy()
 	{
 		try
@@ -230,7 +190,7 @@ public class BigHero6 extends JFrame implements Runnable
 				if (e.getKeyChar() == '9')
 				{
 					//BigHero6.access$302(BigHero6.this, 1);
-					direction_hero=9;
+					direction_hero=1;
 				}
 				if (e.getKeyChar() == '7')
 				{
@@ -492,11 +452,11 @@ public class BigHero6 extends JFrame implements Runnable
                 if(stored_data==false)
                 {
                     int scored=this.score;
-                    conn.insertHighScore(this.name, scored);
+                    hm.addScore(this.name,scored);
                     this.stored_data=true;
                 }
                 
-            } catch (SQLException ex) 
+            } catch (Exception ex) 
             {
                 Logger.getLogger(BigHero6.class.getName()).log(Level.SEVERE, null, ex);
             }

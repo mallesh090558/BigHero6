@@ -11,29 +11,17 @@ import java.util.ArrayList;
 
 public class Obstacles
 {
-  private static final int BOX_LENGTH = 60;
   ArrayList boxesEnxt;
   ArrayList EDirect;
-  private final int MAX_ENEMY = 10;
   private BigHero6 wormChase;
-  private Image enemy;
-  private Rectangle box;
+  private Image enemy,explosion;
   private int[] probsForOffset;
-  private static final int NUM_PROBS = 9;
   private Point2D.Double[] incrs;
-  private static final int NUM_DIRS = 8;
-  private static final int N = 0;
-  private static final int NE = 1;
-  private static final int E = 2;
-  private static final int SE = 3;
-  private static final int S = 4;
-  private static final int SW = 5;
-  private static final int W = 6;
-  private static final int NW = 7;
   private int pWidth;
   private int pHeight;
-  private final int SPEED = 10;
   public int ScoreFinal;
+  
+  public static int DestroyedAnimation=0;
 
   public Obstacles(BigHero6 wc, int pw, int ph)
   {
@@ -42,6 +30,7 @@ public class Obstacles
     this.ScoreFinal += 1;
     this.wormChase = wc;
     this.enemy = Toolkit.getDefaultToolkit().getImage(getClass().getResource("fireball.gif"));
+    this.explosion = Toolkit.getDefaultToolkit().getImage(getClass().getResource("explosion.gif"));
 
     this.probsForOffset = new int[9];
     this.probsForOffset[0] = 0;
@@ -54,7 +43,7 @@ public class Obstacles
     this.probsForOffset[7] = -1;
     this.probsForOffset[8] = -2;
 
-    this.incrs = new Point2D.Double[8];
+    this.incrs = new Point2D.Double[11];
     this.incrs[0] = new Point2D.Double(0.0D, -1.0D);
     this.incrs[1] = new Point2D.Double(0.7D, -0.7D);
     this.incrs[2] = new Point2D.Double(1.0D, 0.0D);
@@ -63,6 +52,9 @@ public class Obstacles
     this.incrs[5] = new Point2D.Double(-0.7D, 0.7D);
     this.incrs[6] = new Point2D.Double(-1.0D, 0.0D);
     this.incrs[7] = new Point2D.Double(-0.7D, -0.7D);
+    this.incrs[8] = new Point2D.Double(0.0D, 0.0D);
+    this.incrs[9] = new Point2D.Double(0.0D, 0.0D);
+    this.incrs[10] = new Point2D.Double(0.0D, 0.0D);
 
     this.boxesEnxt = new ArrayList(10);
     this.EDirect = new ArrayList(10);
@@ -141,10 +133,22 @@ public class Obstacles
     System.out.println("INDEX:10 & SIZE:" + this.boxesEnxt.size());
     for (int i = 0; i < this.boxesEnxt.size(); i++)
     {
-      Rectangle box = (Rectangle)this.boxesEnxt.get(i);
-      boolean res = g.drawImage(this.enemy, box.x, box.y, box.width, box.height, null);
-      if (res == true)
-        System.out.println("Image loaded success");
+        if((Integer)this.EDirect.get(i)<8)
+        {
+            Rectangle box = (Rectangle)this.boxesEnxt.get(i);
+            boolean res = g.drawImage(this.enemy, box.x, box.y, box.width, box.height, null);
+            if (res == true)
+                System.out.println("Image loaded success");
+        }
+        else
+        {
+            Rectangle box = (Rectangle)this.boxesEnxt.get(i);
+            boolean res = g.drawImage(this.explosion, box.x, box.y, box.width, box.height, null);
+            if (res == true)
+                System.out.println("Image loaded success");
+            if((Integer)this.EDirect.get(i)<10)
+            this.EDirect.set(i,((Integer)this.EDirect.get(i))+1);
+        }
     }
   }
 

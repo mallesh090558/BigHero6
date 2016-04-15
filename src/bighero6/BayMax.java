@@ -9,18 +9,7 @@ import java.awt.geom.Point2D;
 
 public class BayMax
 {
-  private static final int DOTSIZE = 100;
-  private final int SPEED = 20;
   private boolean colllision = false;
-  private static final int NUM_DIRS = 8;
-  private static final int N = 0;
-  private static final int NE = 1;
-  private static final int E = 2;
-  private static final int SE = 3;
-  private static final int S = 4;
-  private static final int SW = 5;
-  private static final int W = 6;
-  private static final int NW = 7;
   Point2D.Double[] incrs;
   private Point cellHeroCur;
   private Point cellHeroNxt;
@@ -33,7 +22,7 @@ public class BayMax
   private Image hero;
   private Image back;
   private Image fire;
-
+  
   public BayMax(int pW, int pH, Obstacles os)
   {
     this.pWidth = pW; this.pHeight = pH;
@@ -95,8 +84,9 @@ public class BayMax
     this.cellHeroCur = this.cellHeroNxt;
     g.drawImage(this.back, 0, 0, this.pWidth, this.pHeight, null);
     Rectangle box = new Rectangle(this.cellHeroCur.x, this.cellHeroCur.y, 100, 100);
-    boolean res = g.drawImage(this.hero, box.x, box.y, box.width, box.height, null);
+    g.drawImage(this.hero, box.x, box.y, box.width, box.height, null);
 
+    
     if (this.fireHeroNxt != null)
     {
       this.fireHeroCur = this.fireHeroNxt;
@@ -110,9 +100,12 @@ public class BayMax
     Rectangle hero = new Rectangle(this.cellHeroCur.x, this.cellHeroCur.y, 100, 100);
     for (int i = 0; i < this.obs.boxesEnxt.size(); i++)
     {
-      Rectangle enemy = (Rectangle)(Rectangle)this.obs.boxesEnxt.get(i);
-      if (hero.intersects(enemy))
-        this.colllision = true;
+        if((int)this.obs.EDirect.get(i)<8)
+        {
+            Rectangle enemy = (Rectangle)(Rectangle)this.obs.boxesEnxt.get(i);
+            if (hero.intersects(enemy))
+                this.colllision = true;
+        }
     }
   }
 
@@ -129,22 +122,28 @@ public class BayMax
   {
     boolean fired = false;
     int deadenemy = 0;
+    int i;
     Rectangle fire = new Rectangle(this.fireHeroCur.x, this.fireHeroCur.y, 100, 100);
-    for (int i = 0; i < this.obs.boxesEnxt.size(); i++)
+    for (i = 0; i < this.obs.boxesEnxt.size(); i++)
     {
       Rectangle enemy = (Rectangle)(Rectangle)this.obs.boxesEnxt.get(i);
-      if (!fire.intersects(enemy))
-        continue;
-      fired = true;
-      deadenemy = i;
+      if (fire.intersects(enemy) && (Integer)obs.EDirect.get(i)<8)
+      {
+        fired = true;
+        deadenemy = i;
+      }
+      if((Integer)obs.EDirect.get(i)>=10)
+      {
+        this.obs.boxesEnxt.remove(deadenemy);
+        this.obs.EDirect.remove(deadenemy);
+      }
     }
-
     if (fired == true)
     {
       this.fireHeroCur = null;
       this.fireHeroNxt = null;
-      this.obs.boxesEnxt.remove(deadenemy);
-      this.obs.EDirect.remove(deadenemy);
+      
+      obs.EDirect.set(deadenemy, 8);
     }
   }
 }
