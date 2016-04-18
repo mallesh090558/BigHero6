@@ -22,7 +22,7 @@ public class BayMax
   private Image hero;
   private Image back;
   private Image fire;
-  
+
   public BayMax(int pW, int pH, Obstacles os)
   {
     this.pWidth = pW; this.pHeight = pH;
@@ -76,6 +76,7 @@ public class BayMax
     else if (newY > this.pHeight) {
       newY -= this.pHeight;
     }
+    
     return new Point(newX, newY);
   }
 
@@ -100,7 +101,7 @@ public class BayMax
     Rectangle hero = new Rectangle(this.cellHeroCur.x, this.cellHeroCur.y, 100, 100);
     for (int i = 0; i < this.obs.boxesEnxt.size(); i++)
     {
-        if((int)this.obs.EDirect.get(i)<8)
+        if((int)this.obs.EDirect.get(i)<8 && this.obs.EnemyManage.get(i)>obs.GENLENGTH)
         {
             Rectangle enemy = (Rectangle)(Rectangle)this.obs.boxesEnxt.get(i);
             if (hero.intersects(enemy))
@@ -127,7 +128,7 @@ public class BayMax
     for (i = 0; i < this.obs.boxesEnxt.size(); i++)
     {
       Rectangle enemy = (Rectangle)(Rectangle)this.obs.boxesEnxt.get(i);
-      if (fire.intersects(enemy) && (Integer)obs.EDirect.get(i)<8)
+      if (fire.intersects(enemy) && (Integer)obs.EDirect.get(i)<8 && obs.EnemyManage.get(i)>obs.GENLENGTH)
       {
         fired = true;
         deadenemy = i;

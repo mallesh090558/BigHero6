@@ -22,6 +22,7 @@ import java.awt.image.BufferStrategy;
 import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.input.KeyCode;
 import javax.swing.JFrame;
 
 public class BigHero6 extends JFrame implements Runnable
@@ -75,9 +76,13 @@ public class BigHero6 extends JFrame implements Runnable
 	private BufferStrategy bufferStrategy;
 	private int direction_hero = 0;
         private boolean stored_data=false;
+        private boolean level_msg_displayed=false;
         private String name;
         
         private HighscoreManager hm;
+        private static int LEVEL_NOW=1;
+        private static int ENEMY_KILL=0;
+        private static final int LEVEL_LENGTH=10;
 	
 	public BigHero6(long period, HighscoreManager hm , String name)
 	{
@@ -231,6 +236,10 @@ public class BigHero6 extends JFrame implements Runnable
 				{
 					fred.fireBullet();
 				}
+                                if(e.getKeyCode() == KeyEvent.VK_ENTER)
+                                {
+                                       level_msg_displayed=false;
+                                }
 			}
 		});
 		Runtime.getRuntime().addShutdownHook(new Thread() 
@@ -290,72 +299,87 @@ public class BigHero6 extends JFrame implements Runnable
 	
 		while (this.running)
 		{
-			gameUpdate();
-			screenUpdate();
-	
-			long afterTime = J3DTimer.getValue();
-			long timeDiff = afterTime - beforeTime;
-			long sleepTime = this.period - timeDiff - overSleepTime;
-	
-			if (sleepTime > 0L)
-			{
-				try 
-				{
-					Thread.sleep(sleepTime / 1000000L);
-				} 
-				catch (InterruptedException ex) 
-				{
-				}
-				overSleepTime = J3DTimer.getValue() - afterTime - sleepTime;
-			}
-			else
-			{
-				excess -= sleepTime;
-				overSleepTime = 0L;
-				noDelays++; 
-				if (noDelays >= 16)
-				{
-					Thread.yield();
-					noDelays = 0;
-				}
-			}
-			beforeTime = J3DTimer.getValue();
-	
-			int skips = 0;
-			while ((excess > this.period) && (skips < MAX_FRAME_SKIPS))
-			{
-				excess -= this.period;
-				gameUpdate();
-				skips++;
-			}
-			this.framesSkipped += skips;
-			storeStats();
+                    try {
+                        gameUpdate();
+                        screenUpdate();
+                        
+                        long afterTime = J3DTimer.getValue();
+                        long timeDiff = afterTime - beforeTime;
+                        long sleepTime = this.period - timeDiff - overSleepTime;
+                        
+                        if (sleepTime > 0L)
+                        {
+                            try
+                            {
+                                Thread.sleep(sleepTime / 1000000L);
+                            }
+                            catch (InterruptedException ex)
+                            {
+                            }
+                            overSleepTime = J3DTimer.getValue() - afterTime - sleepTime;
+                        }
+                        else
+                        {
+                            excess -= sleepTime;
+                            overSleepTime = 0L;
+                            noDelays++;
+                            if (noDelays >= 16)
+                            {
+                                Thread.yield();
+                                noDelays = 0;
+                            }
+                        }
+                        beforeTime = J3DTimer.getValue();
+                        
+                        int skips = 0;
+                        while ((excess > this.period) && (skips < MAX_FRAME_SKIPS))
+                        {
+                            excess -= this.period;
+                            gameUpdate();
+                            skips++;
+                        }
+                        this.framesSkipped += skips;
+                        storeStats();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(BigHero6.class.getName()).log(Level.SEVERE, null, ex);
+                    }
 		}
 		finishOff();
 	}
 	
-	private void gameUpdate()
+	private void gameUpdate() throws InterruptedException
 	{
-		int TimeE = (int)(this.frameCount / 15L);
-		if ((!this.isPaused) && (!this.gameOver))
-		{
+            int TimeE = (int)(this.frameCount / 15L);
+            if ((!this.isPaused) && (!this.gameOver))
+            {
 			this.obs.addEnemy(false);
 			System.out.println("DIRECTION:"+this.direction_hero);
 			this.gameOver = this.fred.NxtMove(this.direction_hero);
 			System.out.println("TIMESPENT" + this.frameCount / 15L);
-		}
-		if (TimeE % 10 == 1)
-			this.genE = true;
-		if (((TimeE > 10) && (TimeE % 10 == 0)) && (!this.isPaused) && (!this.gameOver))
-		{
-			if (this.genE == true)
-			{
-				System.out.println("TIMESPENT RRRRRRRRRRRRRRRRRRRRRRRRR");
-				this.obs.addEnemy(true);
-				this.genE = false;
-			}
-		}
-	}
+			
+			if (((TimeE > 10) && (TimeE % 10 == 0))  && this.genE == true)
+                        {
+                            System.out.println("TIMESPENT RRRRRRRRRRRRRRRRRRRRRRRRR");
+                            for(int i=0;i<LEVEL_NOW;i++)
+                            {
+                                this.obs.addEnemy(true);
+                            }
+                            this.genE = false;
+                            ENEMY_KILL++;
+                        }
+            }
+		
+            if (TimeE % 10 == 1)
+            {
+		this.genE = true;
+            }
+            
+            if(ENEMY_KILL==LEVEL_LENGTH)
+            {
+                BigHero6.LEVEL_NOW++;
+		this.level_msg_displayed=true;
+            }
+    }
 	
 	private void screenUpdate()
 	{
@@ -380,28 +404,45 @@ public class BigHero6 extends JFrame implements Runnable
 		}
 	}
 	
-	private void gameRender(Graphics gScr)
+	private void gameRender(Graphics gScr) throws InterruptedException
 	{
-		gScr.setColor(Color.white);
-		gScr.fillRect(0, 0, this.pWidth, this.pHeight);
-		
-		gScr.setColor(Color.blue);
-		gScr.setFont(this.font);
-		
-		gScr.drawString("Average FPS/UPS: " + this.df.format(this.averageFPS) + ", " + this.df.format(this.averageUPS), 20, 25);
-		
-		gScr.drawString("Time Spent: " + this.timeSpentInGame + " secs", 10, this.pHeight - 15);
-		gScr.drawString("Boxes used: " + this.boxesUsed, 260, this.pHeight - 15);
-		
-		gScr.setColor(Color.black);
-		
-		this.fred.draw(gScr);
-		this.obs.draw(gScr);
-		
-                drawButtons(gScr);
-		
-		if (this.gameOver)
-			gameOverMessage(gScr);
+		if(!level_msg_displayed)
+		{
+			gScr.setColor(Color.white);
+			gScr.fillRect(0, 0, this.pWidth, this.pHeight);
+			
+			gScr.setColor(Color.blue);
+			gScr.setFont(this.font);
+			
+			gScr.drawString("Average FPS/UPS: " + this.df.format(this.averageFPS) + ", " + this.df.format(this.averageUPS), 20, 25);
+			
+			gScr.drawString("Time Spent: " + this.timeSpentInGame + " secs", 10, this.pHeight - 15);
+			gScr.drawString("Boxes used: " + this.boxesUsed, 260, this.pHeight - 15);
+			
+			gScr.setColor(Color.black);
+			
+			this.fred.draw(gScr);
+			this.obs.draw(gScr);
+			
+        	        drawButtons(gScr);
+			
+        	        if (this.gameOver)
+				gameOverMessage(gScr);
+		}
+		else if(ENEMY_KILL==LEVEL_LENGTH)
+		{
+                    String msg = "NOW THE LEVEL IS " + LEVEL_NOW;
+   	            int x = (this.pWidth - this.metrics.stringWidth(msg)) / 2;
+   	            int y = (this.pHeight - this.metrics.getHeight()) / 2;
+   	            gScr.setColor(Color.red);
+   	            gScr.setFont(this.font);
+                    
+   	            gScr.drawString(msg, x, y);
+                    gScr.setColor(Color.green);
+                    gScr.drawString("Press Enter to Continue . . .", x-10, y+40);
+   	            level_msg_displayed=true;
+   	            ENEMY_KILL=0;
+   	        }
 	}
 	
 	private void drawButtons(Graphics g)
@@ -416,7 +457,9 @@ public class BigHero6 extends JFrame implements Runnable
 		g.drawOval(this.pauseArea.x, this.pauseArea.y, this.pauseArea.width, this.pauseArea.height);
 		
 		if (this.isPaused)
+                {
 			g.drawString("Paused", this.pauseArea.x, this.pauseArea.y + 10);
+                }
 		else 
 		{
 			g.drawString("Pause", this.pauseArea.x + 5, this.pauseArea.y + 10);
@@ -455,6 +498,7 @@ public class BigHero6 extends JFrame implements Runnable
                     hm.addScore(this.name,scored);
                     this.stored_data=true;
                 }
+                LEVEL_NOW=1;
                 
             } catch (Exception ex) 
             {

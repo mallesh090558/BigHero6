@@ -13,16 +13,18 @@ public class Obstacles
 {
   ArrayList boxesEnxt;
   ArrayList EDirect;
+  ArrayList<Integer> EnemyManage;
+  
   private BigHero6 wormChase;
-  private Image enemy,explosion;
+  private Image enemy,explosion,gen_explosion;
   private int[] probsForOffset;
   private Point2D.Double[] incrs;
   private int pWidth;
   private int pHeight;
   public int ScoreFinal;
   
-  public static int DestroyedAnimation=0;
-
+  public static int GENLENGTH=20;
+  
   public Obstacles(BigHero6 wc, int pw, int ph)
   {
     this.pWidth = pw;
@@ -31,6 +33,7 @@ public class Obstacles
     this.wormChase = wc;
     this.enemy = Toolkit.getDefaultToolkit().getImage(getClass().getResource("fireball.gif"));
     this.explosion = Toolkit.getDefaultToolkit().getImage(getClass().getResource("explosion.gif"));
+    this.gen_explosion = Toolkit.getDefaultToolkit().getImage(getClass().getResource("gen_explode.gif"));
 
     this.probsForOffset = new int[9];
     this.probsForOffset[0] = 0;
@@ -58,19 +61,20 @@ public class Obstacles
 
     this.boxesEnxt = new ArrayList(10);
     this.EDirect = new ArrayList(10);
+    this.EnemyManage = new ArrayList(10);
   }
 
   public synchronized void addEnemy(boolean addE)
   {
     if ((this.boxesEnxt.isEmpty()) || (addE))
     {
-      System.out.println("BOX:" + this.boxesEnxt.isEmpty() + "\t" + "REGEN" + addE);
+      System.out.println("BOX:" + this.boxesEnxt.isEmpty() + "\t" + "REGEN :" + addE);
       int newBearing = (int)(Math.random() * 8.0D);
       Point ranPt = RandomPoint();
       if (this.boxesEnxt.isEmpty())
       {
         this.boxesEnxt.add(new Rectangle(ranPt.x, ranPt.y, 60, 60));
-
+        this.EnemyManage.add(0, 0);
         this.EDirect.add(0, Integer.valueOf(newBearing));
         this.ScoreFinal += 1;
       }
@@ -79,6 +83,7 @@ public class Obstacles
         System.out.println("LENGHT:" + this.EDirect.size());
         this.boxesEnxt.add(new Rectangle(ranPt.x, ranPt.y, 60, 60));
 
+        this.EnemyManage.add(this.EnemyManage.size(), 0);
         this.EDirect.add(this.EDirect.size(), Integer.valueOf(newBearing));
         this.ScoreFinal += 1;
       }
@@ -94,11 +99,14 @@ public class Obstacles
         {
           this.boxesEnxt.set(i, new Rectangle(newPt.x, newPt.y, 60, 60));
         }
-        else
+        else 
         {
-          int newBearing = (int)(Math.random() * 8.0D);
-          this.EDirect.set(i, Integer.valueOf(newBearing));
-          i--;
+           if(EnemyManage.get(i)>GENLENGTH)
+           {
+                int newBearing = (int)(Math.random() * 8.0D);
+                this.EDirect.set(i, Integer.valueOf(newBearing));
+                i--;
+           }
         }
       }
     }
@@ -107,13 +115,18 @@ public class Obstacles
   private Point nextPoint(int prevPosn, int bearing)
   {
     Point2D.Double incr = this.incrs[bearing];
-
     System.out.println(" IN NEXT POINT :" + prevPosn);
     Rectangle r = (Rectangle)this.boxesEnxt.get(prevPosn);
-
-    int newX = r.x + (int)(10.0D * incr.x);
-    int newY = r.y + (int)(10.0D * incr.y);
-
+    
+    int newX = r.x;
+    int newY = r.y;
+    
+    if(this.EnemyManage.get(prevPosn)>=GENLENGTH)
+    {
+        newX = r.x + (int)(10.0D * incr.x);
+        newY = r.y + (int)(10.0D * incr.y);
+    }
+    
     if (newX + 60 < 0)
       newX += this.pWidth;
     else if (newX > this.pWidth) {
@@ -130,10 +143,11 @@ public class Obstacles
   public synchronized void draw(Graphics g)
   {
     g.setColor(Color.blue);
-    System.out.println("INDEX:10 & SIZE:" + this.boxesEnxt.size());
+    System.out.println("INDEX:"+EnemyManage.size()+" & SIZE:" + this.boxesEnxt.size());
     for (int i = 0; i < this.boxesEnxt.size(); i++)
     {
-        if((Integer)this.EDirect.get(i)<8)
+        System.out.println("MANAGE :"+EnemyManage.get(i)+"\t"+"DIRECT :"+EDirect.get(i));
+        if((Integer)this.EDirect.get(i)<8 && this.EnemyManage.get(i)>GENLENGTH)
         {
             Rectangle box = (Rectangle)this.boxesEnxt.get(i);
             boolean res = g.drawImage(this.enemy, box.x, box.y, box.width, box.height, null);
@@ -143,11 +157,17 @@ public class Obstacles
         else
         {
             Rectangle box = (Rectangle)this.boxesEnxt.get(i);
-            boolean res = g.drawImage(this.explosion, box.x, box.y, box.width, box.height, null);
-            if (res == true)
-                System.out.println("Image loaded success");
-            if((Integer)this.EDirect.get(i)<10)
-            this.EDirect.set(i,((Integer)this.EDirect.get(i))+1);
+            if(this.EnemyManage.get(i)<=GENLENGTH)
+            {
+              g.drawImage(this.gen_explosion, box.x, box.y, box.width, box.height, null);
+              this.EnemyManage.set(i,(this.EnemyManage.get(i))+1);
+            }
+            else if((Integer)this.EDirect.get(i)>7)
+            {
+              g.drawImage(this.explosion, box.x, box.y, box.width, box.height, null);
+              if((Integer)this.EDirect.get(i)<10)
+              this.EDirect.set(i,((Integer)this.EDirect.get(i))+1);
+            }
         }
     }
   }
@@ -175,6 +195,7 @@ public class Obstacles
         collided = true;
       }
     }
+    System.out.println("COLLISION STATUS:"+collided);
     return collided;
   }
 }
